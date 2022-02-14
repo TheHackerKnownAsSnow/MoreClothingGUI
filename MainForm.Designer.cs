@@ -166,8 +166,6 @@
             this.fastColoredTextBoxLeft.TabIndex = 0;
             this.fastColoredTextBoxLeft.Zoom = 100;
             this.fastColoredTextBoxLeft.TextChanged += new System.EventHandler<FastColoredTextBoxNS.TextChangedEventArgs>(this.fastColoredTextBoxLeft_TextChanged);
-            this.fastColoredTextBoxLeft.SelectionChangedDelayed += new System.EventHandler(this.fastColoredTextBoxLeft_SelectionChangedDelayed);
-            this.fastColoredTextBoxLeft.CustomAction += new System.EventHandler<FastColoredTextBoxNS.CustomActionEventArgs>(this.fastColoredTextBoxLeft_CustomAction);
             this.fastColoredTextBoxLeft.Click += new System.EventHandler(this.fastColoredTextBoxLeft_Click);
             // 
             // fastColoredTextBoxRight
@@ -332,7 +330,7 @@
             this.purgeToolStripMenuItem.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(40)))), ((int)(((byte)(42)))), ((int)(((byte)(48)))));
             this.purgeToolStripMenuItem.ForeColor = System.Drawing.Color.White;
             this.purgeToolStripMenuItem.Name = "purgeToolStripMenuItem";
-            this.purgeToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.purgeToolStripMenuItem.Size = new System.Drawing.Size(105, 22);
             this.purgeToolStripMenuItem.Text = "Purge";
             this.purgeToolStripMenuItem.Click += new System.EventHandler(this.purgeToolStripMenuItem_Click);
             // 

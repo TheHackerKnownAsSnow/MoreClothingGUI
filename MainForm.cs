@@ -20,7 +20,7 @@ namespace MoreClothingGUI
 
     public partial class MainForm : Form
     {
-
+        //Most declarations are here other than syntax color styles for FCTB and the console visibility 
         public FolderBrowserDialog folderBrowserDialog;
         public string selectedLoaderFolder;
         public string SDTFile;
@@ -31,7 +31,11 @@ namespace MoreClothingGUI
         public bool canScan;
         public bool doesConsole = false;
 
-
+        //AllocConsole(); is called in MainForm_Load
+        [DllImport("kernel32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        static extern bool AllocConsole();
+        //Todo, list xml Template types with MC types as values
         enum Modtypes
         {
             Low,
@@ -39,30 +43,116 @@ namespace MoreClothingGUI
             High
         }
 
+        //This is the only way to 100% theme these UI elemets, I've handled the basics for my dark mode theme, could be refined e.g. colourful accent
+        public class CustomColorTable : ProfessionalColorTable
+        {
+            public override Color MenuItemSelected
+            {
+                get
+                {
+                    return Color.FromArgb(255, 40, 42, 48);
+                }
+            }
+            public override Color MenuItemPressedGradientBegin
+            {
+                get
+                {
+                    return Color.FromArgb(255, 40, 42, 48);
+                }
+            }
+            public override Color MenuItemPressedGradientEnd
+            {
+                get
+                {
+                    return Color.FromArgb(255, 40, 42, 48);
+                }
+            }
+            public override Color MenuItemSelectedGradientBegin
+            {
+                get
+                {
+                    return Color.FromArgb(255, 40, 42, 48);
+                }
+            }
+            public override Color MenuItemSelectedGradientEnd
+            {
+                get
+                {
+                    return Color.FromArgb(255, 40, 42, 48);
+                }
+            }
+            public override Color ImageMarginGradientBegin
+            {
+                get
+                {
+                    return Color.FromArgb(255, 40, 42, 48);
+                }
+            }
+
+            public override Color ImageMarginGradientMiddle
+            {
+                get
+                {
+                    return Color.FromArgb(255, 40, 42, 48);
+                }
+            }
+
+            public override Color ImageMarginGradientEnd
+            {
+                get
+                {
+                    return Color.FromArgb(255, 40, 42, 48);
+                }
+            }
+
+            public override Color ToolStripDropDownBackground
+            {
+                get
+                {
+                    return Color.FromArgb(255, 40, 42, 48);
+                }
+            }
+        }
+
+
+
         public MainForm()
         {
-
             InitializeComponent();
 
-            ToolStripManager.Renderer = new ToolStripProfessionalRenderer(new CustomColorTable());
-
+            //Nearly zero progromatic UI
+            menuStrip.Renderer = new ToolStripProfessionalRenderer(new CustomColorTable());
             menuStrip.ForeColor = Color.White;
             menuStrip.BackColor = Color.FromArgb(255, 40, 42, 48);
-
             splitContainer1.SplitterWidth = 15;
         }
         private void MainForm_Load(object sender, EventArgs e)
         {
-
-
+            //Initializes a console sub process 
+            //Not a good practice for production, I imagine
+            //A debug console is stupid cool, though its not utilized for that at all
+            //This console runs the previous AutoMoreClothing console app code that only worked in the IDE
+            //Unless told otherwise I plan to keep this
             AllocConsole();
-
+        }
+        //can't stop the console for starting as visible, gets hidded in Program.cs therfore starting position is false
+        public bool debug = false;
+        private void debugToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            //read first
+            if (debug)
+            {
+                Program.HideConsoleWindow();
+            }
+            else
+            {
+                Program.ShowConsoleWindow();
+            }
+            //now toggle
+            debug = !debug;
         }
 
-        [DllImport("kernel32.dll", SetLastError = true)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        static extern bool AllocConsole();
-
+        //File > Open
         private void testToolStripMenuItem_Click(object sender, EventArgs e)
         {
             folderBrowserDialog = new FolderBrowserDialog();
@@ -77,21 +167,32 @@ namespace MoreClothingGUI
                     if (File.Exists(LoaderFile))
                     {
                         Console.WriteLine("Loader Found");
-                        MoreClothingSettings = selectedLoaderFolder + "/Settings/moreclothingV11settings.txt";
-                        if (File.Exists(MoreClothingSettings))
-                        {
-                            string mcfs = File.ReadAllText(MoreClothingSettings);
-                            fastColoredTextBoxLeft.Text = mcfs;
-                            fastColoredTextBoxRight.Text = "Right click me";
-                            canScan = true;
-                            MoreClothingFolder = selectedLoaderFolder + "/Mods/$INIT$/moreclothingmods";
 
-                        }
-                        else
+                        //checks for moreclothing versions up to V100
+                        for (int i = 0; i < 100; i++)
                         {
-                            MessageBox.Show("moreclothingV11settings.txt\ncan not be found", "Error");
-                            Console.WriteLine("moreclothingV11settings.txt\ncan not be found");
+                            if (File.Exists(selectedLoaderFolder + "/Settings/moreclothingV" + i + "settings.txt"))
+                            {
+                                MoreClothingSettings = selectedLoaderFolder + "/Settings/moreclothingV" + i + "settings.txt";
+                                if (Directory.Exists(selectedLoaderFolder + "/Mods/$INIT$/moreclothingmods"))
+                                    MoreClothingFolder = selectedLoaderFolder + "/Mods/$INIT$/moreclothingmods";
+                                else
+                                {
+                                    MessageBox.Show("Missing Moreclothing mods folder", "Error");
+                                    return;
+                                }
+                                Console.WriteLine("Missing Moreclothing mods folder");
+                                Console.WriteLine("More Clothing Settings Found");
+                                string mcfs = File.ReadAllText(MoreClothingSettings);
+                                fastColoredTextBoxLeft.Text = mcfs;
+                                fastColoredTextBoxRight.Text = "Right click me";
+                                canScan = true;     //enables right click "Generate" context menu
+
+                                return;
+                            }
                         }
+                        MessageBox.Show("Missing Moreclothing settings file", "Error");
+                        Console.WriteLine("Missing Moreclothing settings file");
 
                     }
                     else
@@ -112,21 +213,29 @@ namespace MoreClothingGUI
 
             }
         }
-        private void editEntryArguments_Click(object sender, EventArgs e)
-        {
-            /*
-             FormCollection fc = Application.OpenForms;
 
-            foreach (Form frm in fc)
+        private void saveToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+
+            if (MoreClothingSettings != null)
             {
-                if (frm.Name == "EntryArguments")
-                {
-                    return;
-                }
+                File.WriteAllText(MoreClothingSettings, fastColoredTextBoxLeft.Text);
+                MessageBox.Show("Settings saved!", "Success");
             }
-            new MultiFormContext(new EntryArguments());
-            */
-            MessageBox.Show("Work in Progress", "Message");
+            else
+            {
+                MessageBox.Show("Nothing to save", "Error");
+            }
+        }
+
+        private void undoToolStripMenuItem1_Click(object sender, EventArgs e)
+        {
+            fastColoredTextBoxLeft.Undo();
+        }
+
+        private void redoToolStripMenuItem1_Click(object sender, EventArgs e)
+        {
+            fastColoredTextBoxLeft.Redo();
         }
 
         private void zoomInToolStripMenuItem_Click(object sender, EventArgs e)
@@ -177,49 +286,71 @@ namespace MoreClothingGUI
             }
         }
 
-        private void undoToolStripMenuItem1_Click(object sender, EventArgs e)
-        {
-            fastColoredTextBoxLeft.Undo();
-        }
 
-        private void redoToolStripMenuItem1_Click(object sender, EventArgs e)
-        {
-            fastColoredTextBoxLeft.Redo();
-        }
-        Style GreenStyle = new TextStyle(Brushes.LightGreen, null, FontStyle.Italic);
+
+        Style LightGreenStyle = new TextStyle(Brushes.LightGreen, null, FontStyle.Italic);
         Style LightBlueStyle = new TextStyle(Brushes.LightSkyBlue, null, FontStyle.Regular);
-        Style MagentaStyle = new TextStyle(Brushes.Magenta, null, FontStyle.Italic);
+        Style LightCoralStyle = new TextStyle(Brushes.LightCoral, null, FontStyle.Italic);
+        Style LightYellowStyle = new TextStyle(Brushes.Cyan, null, FontStyle.Italic);
 
-
+        Style LightSalmonStyle = new TextStyle(Brushes.LightSalmon, null, FontStyle.Italic);
         MarkerStyle SameWordsStyle = new MarkerStyle(new SolidBrush(Color.FromArgb(100, Color.LightYellow)));
         //ShortcutStyle shortCutStyle = new ShortcutStyle(Pens.DarkGray);
+
         private void fastColoredTextBoxLeft_TextChanged(object sender, TextChangedEventArgs e)
         {
 
             fastColoredTextBoxLeft.AllowSeveralTextStyleDrawing = false;
 
             fastColoredTextBoxLeft.ClearStylesBuffer();
-            e.ChangedRange.ClearStyle(GreenStyle, LightBlueStyle);
+            e.ChangedRange.ClearStyle(LightGreenStyle, LightBlueStyle, LightCoralStyle, LightYellowStyle, LightSalmonStyle, SameWordsStyle);
 
 
-            fastColoredTextBoxLeft.AddStyle(GreenStyle);
+            fastColoredTextBoxLeft.AddStyle(LightGreenStyle);
+            fastColoredTextBoxLeft.AddStyle(LightYellowStyle);
+            fastColoredTextBoxLeft.AddStyle(LightSalmonStyle);
 
 
-            e.ChangedRange.SetStyle(MagentaStyle, @"\.swf*", RegexOptions.Multiline);
-            e.ChangedRange.SetStyle(MagentaStyle, @"\.png*", RegexOptions.Multiline);
-            e.ChangedRange.SetStyle(MagentaStyle, @"\.mod*", RegexOptions.Multiline);
-            e.ChangedRange.SetStyle(MagentaStyle, @"\.SWF*", RegexOptions.Multiline);
-            e.ChangedRange.SetStyle(MagentaStyle, @"\.PNG*", RegexOptions.Multiline);
-            e.ChangedRange.SetStyle(MagentaStyle, @"\.MOD*", RegexOptions.Multiline);
 
-            e.ChangedRange.SetStyle(GreenStyle, @"//.*$", RegexOptions.Multiline);
-            e.ChangedRange.SetStyle(GreenStyle, @";.*$", RegexOptions.Multiline);
+            e.ChangedRange.SetStyle(LightYellowStyle, @"\-*", RegexOptions.Multiline);
+
+            e.ChangedRange.SetStyle(LightCoralStyle, @"\.swf*", RegexOptions.Multiline);
+            e.ChangedRange.SetStyle(LightCoralStyle, @"\.png*", RegexOptions.Multiline);
+            e.ChangedRange.SetStyle(LightCoralStyle, @"\.mod*", RegexOptions.Multiline);
+            e.ChangedRange.SetStyle(LightCoralStyle, @"\.SWF*", RegexOptions.Multiline);
+            e.ChangedRange.SetStyle(LightCoralStyle, @"\.PNG*", RegexOptions.Multiline);
+            e.ChangedRange.SetStyle(LightCoralStyle, @"\.MOD*", RegexOptions.Multiline);
+
+            e.ChangedRange.SetStyle(LightSalmonStyle, @"\:Background", RegexOptions.Multiline);
+            e.ChangedRange.SetStyle(LightSalmonStyle, @"\:StaticHair", RegexOptions.Multiline);
+            e.ChangedRange.SetStyle(LightSalmonStyle, @"\:DynamicHair", RegexOptions.Multiline);
+            e.ChangedRange.SetStyle(LightSalmonStyle, @"\:Body", RegexOptions.Multiline);
+            e.ChangedRange.SetStyle(LightSalmonStyle, @"\:Body2", RegexOptions.Multiline);
+            e.ChangedRange.SetStyle(LightSalmonStyle, @"\:Body3", RegexOptions.Multiline);
+            e.ChangedRange.SetStyle(LightSalmonStyle, @"\:CostumeCollar", RegexOptions.Multiline);
+            e.ChangedRange.SetStyle(LightSalmonStyle, @"\:CostumeEyewear", RegexOptions.Multiline);
+            e.ChangedRange.SetStyle(LightSalmonStyle, @"\:CostumeHeadwear", RegexOptions.Multiline);
+            e.ChangedRange.SetStyle(LightSalmonStyle, @"\:CostumeTop", RegexOptions.Multiline);
+            e.ChangedRange.SetStyle(LightSalmonStyle, @"\:CostumeBottoms", RegexOptions.Multiline);
+            e.ChangedRange.SetStyle(LightSalmonStyle, @"\:CostumeBra", RegexOptions.Multiline);
+            e.ChangedRange.SetStyle(LightSalmonStyle, @"\:CostumeLegwear", RegexOptions.Multiline);
+            e.ChangedRange.SetStyle(LightSalmonStyle, @"\:CostumeLegwearB", RegexOptions.Multiline);
+            e.ChangedRange.SetStyle(LightSalmonStyle, @"\:CostumeFootwear", RegexOptions.Multiline);
+            e.ChangedRange.SetStyle(LightSalmonStyle, @"\:CostumeTonguePiercing", RegexOptions.Multiline);
+            e.ChangedRange.SetStyle(LightSalmonStyle, @"\:CostumeNipplePiercing", RegexOptions.Multiline);
+            e.ChangedRange.SetStyle(LightSalmonStyle, @"\:CostumeBellyPiercing", RegexOptions.Multiline);
+            e.ChangedRange.SetStyle(LightSalmonStyle, @"\:CostumeEarPiercing", RegexOptions.Multiline);
+
+            e.ChangedRange.SetStyle(LightYellowStyle, @"\:*", RegexOptions.Multiline);
+            e.ChangedRange.SetStyle(LightYellowStyle, @"\>*", RegexOptions.Multiline);
+            e.ChangedRange.SetStyle(LightYellowStyle, @"\+*", RegexOptions.Multiline);
+            e.ChangedRange.SetStyle(LightYellowStyle, @"\-*", RegexOptions.Multiline);
+
+            e.ChangedRange.SetStyle(LightYellowStyle, @"\\*", RegexOptions.Multiline);
+
+            e.ChangedRange.SetStyle(LightGreenStyle, @"//.*$", RegexOptions.Multiline);
+            e.ChangedRange.SetStyle(LightGreenStyle, @";.*$", RegexOptions.Multiline);
             e.ChangedRange.SetStyle(LightBlueStyle, @"\b\d+[\.]?\d*([eE]\-?\d+)?[lLdDfF]?\b|\b0x[a-fA-F\d]+\b");
-
-        }
-
-        private void fastColoredTextBoxLeft_SelectionChangedDelayed(object sender, EventArgs e)
-        {
 
         }
 
@@ -242,6 +373,74 @@ namespace MoreClothingGUI
                     r.SetStyle(SameWordsStyle);
         }
 
+        private void fastColoredTextBoxRight_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            fastColoredTextBoxRight.AllowSeveralTextStyleDrawing = false;
+
+            fastColoredTextBoxRight.ClearStylesBuffer();
+            e.ChangedRange.ClearStyle(LightGreenStyle, LightBlueStyle, LightCoralStyle, LightYellowStyle, LightSalmonStyle, SameWordsStyle);
+
+            fastColoredTextBoxRight.AddStyle(LightGreenStyle);
+            fastColoredTextBoxRight.AddStyle(LightYellowStyle);
+            fastColoredTextBoxRight.AddStyle(LightSalmonStyle);
+
+            e.ChangedRange.SetStyle(LightCoralStyle, @"\.swf*", RegexOptions.Multiline);
+            e.ChangedRange.SetStyle(LightCoralStyle, @"\.png*", RegexOptions.Multiline);
+            e.ChangedRange.SetStyle(LightCoralStyle, @"\.mod*", RegexOptions.Multiline);
+            e.ChangedRange.SetStyle(LightCoralStyle, @"\.SWF*", RegexOptions.Multiline);
+            e.ChangedRange.SetStyle(LightCoralStyle, @"\.PNG*", RegexOptions.Multiline);
+            e.ChangedRange.SetStyle(LightCoralStyle, @"\.MOD*", RegexOptions.Multiline);
+
+            e.ChangedRange.SetStyle(LightSalmonStyle, @"\:Background", RegexOptions.Multiline);
+            e.ChangedRange.SetStyle(LightSalmonStyle, @"\:StaticHair", RegexOptions.Multiline);
+            e.ChangedRange.SetStyle(LightSalmonStyle, @"\:DynamicHair", RegexOptions.Multiline);
+            e.ChangedRange.SetStyle(LightSalmonStyle, @"\:Body", RegexOptions.Multiline);
+            e.ChangedRange.SetStyle(LightSalmonStyle, @"\:Body2", RegexOptions.Multiline);
+            e.ChangedRange.SetStyle(LightSalmonStyle, @"\:Body3", RegexOptions.Multiline);
+            e.ChangedRange.SetStyle(LightSalmonStyle, @"\:CostumeCollar", RegexOptions.Multiline);
+            e.ChangedRange.SetStyle(LightSalmonStyle, @"\:CostumeEyewear", RegexOptions.Multiline);
+            e.ChangedRange.SetStyle(LightSalmonStyle, @"\:CostumeHeadwear", RegexOptions.Multiline);
+            e.ChangedRange.SetStyle(LightSalmonStyle, @"\:CostumeTop", RegexOptions.Multiline);
+            e.ChangedRange.SetStyle(LightSalmonStyle, @"\:CostumeBottoms", RegexOptions.Multiline);
+            e.ChangedRange.SetStyle(LightSalmonStyle, @"\:CostumeBra", RegexOptions.Multiline);
+            e.ChangedRange.SetStyle(LightSalmonStyle, @"\:CostumeLegwear", RegexOptions.Multiline);
+            e.ChangedRange.SetStyle(LightSalmonStyle, @"\:CostumeLegwearB", RegexOptions.Multiline);
+            e.ChangedRange.SetStyle(LightSalmonStyle, @"\:CostumeFootwear", RegexOptions.Multiline);
+            e.ChangedRange.SetStyle(LightSalmonStyle, @"\:CostumeTonguePiercing", RegexOptions.Multiline);
+            e.ChangedRange.SetStyle(LightSalmonStyle, @"\:CostumeNipplePiercing", RegexOptions.Multiline);
+            e.ChangedRange.SetStyle(LightSalmonStyle, @"\:CostumeBellyPiercing", RegexOptions.Multiline);
+            e.ChangedRange.SetStyle(LightSalmonStyle, @"\:CostumeEarPiercing", RegexOptions.Multiline);
+
+            e.ChangedRange.SetStyle(LightYellowStyle, @"\:*", RegexOptions.Multiline);
+            e.ChangedRange.SetStyle(LightYellowStyle, @"\>*", RegexOptions.Multiline);
+            e.ChangedRange.SetStyle(LightYellowStyle, @"\+*", RegexOptions.Multiline);
+            e.ChangedRange.SetStyle(LightYellowStyle, @"\-*", RegexOptions.Multiline);
+
+            e.ChangedRange.SetStyle(LightYellowStyle, @"\\*", RegexOptions.Multiline);
+
+            e.ChangedRange.SetStyle(LightGreenStyle, @"//.*$", RegexOptions.Multiline);
+            e.ChangedRange.SetStyle(LightGreenStyle, @";.*$", RegexOptions.Multiline);
+            e.ChangedRange.SetStyle(LightBlueStyle, @"\b\d+[\.]?\d*([eE]\-?\d+)?[lLdDfF]?\b|\b0x[a-fA-F\d]+\b");
+        }
+
+        private void editEntryArguments_Click(object sender, EventArgs e)
+        {
+            /*
+             FormCollection fc = Application.OpenForms;
+
+            foreach (Form frm in fc)
+            {
+                if (frm.Name == "EntryArguments")
+                {
+                    return;
+                }
+            }
+            new MultiFormContext(new EntryArguments());
+            */
+            MessageBox.Show("Work in Progress", "Message");
+        }
+
+
         private void fastColoredTextBoxRight_MouseDown(object sender, MouseEventArgs e)
         {
             if (e.Button == System.Windows.Forms.MouseButtons.Right)
@@ -255,34 +454,6 @@ namespace MoreClothingGUI
             }
         }
 
-        private void fastColoredTextBoxRight_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            fastColoredTextBoxRight.AllowSeveralTextStyleDrawing = false;
-
-            fastColoredTextBoxRight.ClearStylesBuffer();
-            e.ChangedRange.ClearStyle(GreenStyle, LightBlueStyle);
-
-
-            fastColoredTextBoxRight.AddStyle(GreenStyle);
-
-
-            e.ChangedRange.SetStyle(MagentaStyle, @"\.swf*", RegexOptions.Multiline);
-            e.ChangedRange.SetStyle(MagentaStyle, @"\.png*", RegexOptions.Multiline);
-            e.ChangedRange.SetStyle(MagentaStyle, @"\.mod*", RegexOptions.Multiline);
-            e.ChangedRange.SetStyle(MagentaStyle, @"\.SWF*", RegexOptions.Multiline);
-            e.ChangedRange.SetStyle(MagentaStyle, @"\.PNG*", RegexOptions.Multiline);
-            e.ChangedRange.SetStyle(MagentaStyle, @"\.MOD*", RegexOptions.Multiline);
-
-            e.ChangedRange.SetStyle(GreenStyle, @"//.*$", RegexOptions.Multiline);
-            e.ChangedRange.SetStyle(GreenStyle, @";.*$", RegexOptions.Multiline);
-            e.ChangedRange.SetStyle(LightBlueStyle, @"\b\d+[\.]?\d*([eE]\-?\d+)?[lLdDfF]?\b|\b0x[a-fA-F\d]+\b");
-        }
-
-
-
-
-        public static StreamWriter writer;
-
         private void toolStripMenuItem1_Click(object sender, EventArgs e)
         {
             customDialogue.SplashForm.ShowSplashScreen();
@@ -291,11 +462,56 @@ namespace MoreClothingGUI
             customDialogue.SplashForm.CloseForm();
         }
 
+        public string getModTypes(string b)
+        {
+            switch (b)
+            {
+                case "Background":
+                    return "Background";
+                case "StaticHair":
+                    return "StaticHair";
+                case "DynamicHair":
+                    return "DynamicHair";
+                case "Body":
+                    return "Body";
+                case "Collar":
+                    return "CostumeCollar";
+                case "Eyewear":
+                    return "CostumeEyewear";
+                case "Headwear":
+                    return "CostumeHeadwear";
+                case "Top":
+                    return "CostumeTop";
+                case "Bottoms":
+                    return "CostumeBottoms";
+                case "Bra":
+                    return "CostumeBra";
+                case "Legwear":
+                    return "CostumeLegwear";
+                case "LegwearB":
+                    return "CostumeLegwearB";
+                case "Footwear":
+                    return "CostumeFootwear";
+                case "TonguePiercing":
+                    return "CostumeTonguePiercing";
+                case "NipplePiercing":
+                    return "CostumeNipplePiercing";
+                case "BellyPiercing":
+                    return "CostumeBellyPiercing";
+                case "EarPiercing":
+                    return "CostumeEarPiercing";
+                    default: return"";
+            }
+        }
+
+
+
+    public static StreamWriter writer;
 
         public void generate()
         {
             string dir = MoreClothingFolder;
-            
+
             FileStream ostrm;
             TextWriter oldOut = Console.Out;
             ostrm = new FileStream("./AutoMoreClothingGUIEntries.txt", FileMode.OpenOrCreate, FileAccess.Write);
@@ -321,18 +537,12 @@ namespace MoreClothingGUI
                     string mods = "";
                     foreach (string b in a)
                     {
-                        if (!(b == "Background"))
-                        {
-                            mods += ":" + "Costume" + b;
-                        }
-                        else
-                        {
-                            mods += ":" + b;
-                        }
+                        mods += ":" + getModTypes(b);
+                        
 
                     }
 
-                    Console.WriteLine(files.Replace(dir + "\\", "") + "=" + (files.Replace(folder + "\\","")).Replace(".swf","") + mods);
+                    Console.WriteLine(files.Replace(dir + "\\", "") + "=" + (files.Replace(folder + "\\", "")).Replace(".swf", "") + mods);
 
                 }
                 string[] modfiles = Directory.GetFiles(folder, "*.mod", SearchOption.TopDirectoryOnly);
@@ -344,14 +554,7 @@ namespace MoreClothingGUI
                     string mods = "";
                     foreach (string b in a)
                     {
-                        if (!(b == "Background"))
-                        {
-                            mods += ":" + "Costume" + b;
-                        }
-                        else
-                        {
-                            mods += ":" + b;
-                        }
+                        mods += ":" + getModTypes(b);
 
 
                     }
@@ -458,42 +661,6 @@ namespace MoreClothingGUI
             return list;
         }
 
-        public bool debug = false; //can't stop the console for starting as visible, gets hidded in Program.cs therfore starting position is false
-
-
-        private void debugToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            //read first
-            if (debug)
-            {
-                Program.HideConsoleWindow();
-            }
-            else
-            {
-                Program.ShowConsoleWindow();
-            }
-            debug = !debug; //now change
-        }
-
-        private void saveToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-
-            if (MoreClothingSettings != null)
-            {
-                File.WriteAllText(MoreClothingSettings, fastColoredTextBoxLeft.Text);
-                MessageBox.Show("moreclothingV11settings.txt \n Saved!", "Success");
-            }
-            else
-            {
-                MessageBox.Show("Nothing to save", "Error");
-            }
-        }
-
-        private void fastColoredTextBoxLeft_CustomAction(object sender, CustomActionEventArgs e)
-        {
-
-        }
-
         private void purgeToolStripMenuItem_Click(object sender, EventArgs e)
         {
 
@@ -528,46 +695,8 @@ namespace MoreClothingGUI
             doesConsole = false;
             fastColoredTextBoxLeft.Text = "";
             fastColoredTextBoxRight.Text = "";
+        }
+
     }
 
-    }
-
-
-
-
-
-    public class CustomColorTable : ProfessionalColorTable
-    {
-        public override Color ImageMarginGradientBegin
-        {
-            get
-            {
-                return Color.FromArgb(255, 40, 42, 48);
-            }
-        }
-
-        public override Color ImageMarginGradientMiddle
-        {
-            get
-            {
-                return Color.FromArgb(255, 40, 42, 48);
-            }
-        }
-
-        public override Color ImageMarginGradientEnd
-        {
-            get
-            {
-                return Color.FromArgb(255, 40, 42, 48);
-            }
-        }
-
-        public override Color ToolStripDropDownBackground
-        {
-            get
-            {
-                return Color.FromArgb(255, 40, 42, 48);
-            }
-        }
-    }
 }

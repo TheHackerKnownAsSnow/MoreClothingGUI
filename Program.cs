@@ -13,8 +13,6 @@ namespace MoreClothingGUI
 {
     static class Program
     {
-        
-
         [DllImport("kernel32.dll")]
         static extern bool AttachConsole(int dwProcessId);
         private const int ATTACH_PARENT_PROCESS = -1;
@@ -28,60 +26,39 @@ namespace MoreClothingGUI
         const int SW_HIDE = 0;
         const int SW_SHOW = 5;
 
-        public static void AttachConsole()
+        [STAThread]
+        static void Main(string[] args)
         {
             
+            AttachConsole(ATTACH_PARENT_PROCESS);
+            Program.HideConsoleWindow();
+            int argCount = args == null ? 0 : args.Length;
+            Console.WriteLine("You specified {0} arguments:", argCount);
+            for (int i = 0; i < argCount; i++)
+            {
+                Console.WriteLine("  {0}", args[i]);
+            }
 
-            var ret = NativeMethods.AllocConsole();
-            //std::cout, std::clog, std::cerr, std::cin
+            const string appName = "MoreClothingGUI";
+            bool createdNew;
 
+            mutex = new Mutex(true, appName, out createdNew);
 
-            IntPtr currentStdout = NativeMethods.GetStdHandle(NativeMethods.STD_OUTPUT_HANDLE);
+            if (!createdNew)
+            {
+                //app is already running! Exiting the application  
+                return;
+            }
 
-            // IntPtr(7) was a dangerous assumption that doesn't work on current versions of Windows...
-            //NativeMethods.SetStdHandle(NativeMethods.STD_OUTPUT_HANDLE, new IntPtr(7));
+            
+            const int SW_HIDE = 0;
+            const int SW_SHOW = 5;
+            var handle = GetConsoleWindow();
 
-            // Instead, get the defaultStdOut using PInvoke
-            SafeFileHandle defaultStdOut = NativeMethods.CreateFile("CONOUT$", EFileAccess.GenericRead | EFileAccess.GenericWrite, EFileShare.Write, IntPtr.Zero, ECreationDisposition.OpenExisting, 0, IntPtr.Zero);
-            NativeMethods.SetStdHandle(NativeMethods.STD_OUTPUT_HANDLE, defaultStdOut.DangerousGetHandle());    // also seems dangerous... there may be an alternate signature for SetStdHandle that takes SafeFileHandle.
-
-            TextWriter writer = new StreamWriter(Console.OpenStandardOutput()) { AutoFlush = true };
-            Console.SetOut(writer);
+            Application.EnableVisualStyles();
+            Application.SetCompatibleTextRenderingDefault(false);
+            Application.Run(new MultiFormContext(new MainForm()));
         }
-
-        internal static class NativeMethods
-        {
-            // 0xFFFFFFF5 is not consistent with what I found...
-            //internal const uint STD_OUTPUT_HANDLE = 0xFFFFFFF5; 
-
-            // https://www.pinvoke.net/default.aspx/kernel32.getstdhandle
-            internal const int STD_OUTPUT_HANDLE = -11;
-
-            [DllImport("kernel32.dll")]
-            [return: MarshalAs(UnmanagedType.Bool)]
-            internal static extern bool AllocConsole();
-
-
-
-            // method signature changed per https://www.pinvoke.net/default.aspx/kernel32.getstdhandle
-            [DllImport("kernel32.dll", SetLastError = true)]
-            internal static extern IntPtr GetStdHandle(int nStdHandle);
-
-            // method signature changed per https://www.pinvoke.net/default.aspx/kernel32.setstdhandle
-            [DllImport("kernel32.dll")]
-            internal static extern bool SetStdHandle(int nStdHandle, IntPtr hHandle);
-
-            [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Auto)]
-            internal static extern SafeFileHandle CreateFile(
-                string lpFileName,
-                EFileAccess dwDesiredAccess,
-                EFileShare dwShareMode,
-                IntPtr lpSecurityAttributes,
-                ECreationDisposition dwCreationDisposition,
-                EFileAttributes dwFlagsAndAttributes,
-                IntPtr hTemplateFile);
-        }
-
 
         // ENUMS FROM http://www.pinvoke.net/default.aspx/kernel32/CreateFile.html
         [Flags]
@@ -244,6 +221,60 @@ namespace MoreClothingGUI
             FirstPipeInstance = 0x00080000
         }
 
+        public static void AttachConsole()
+        {
+
+
+            var ret = NativeMethods.AllocConsole();
+            //std::cout, std::clog, std::cerr, std::cin
+
+
+            IntPtr currentStdout = NativeMethods.GetStdHandle(NativeMethods.STD_OUTPUT_HANDLE);
+
+            // IntPtr(7) was a dangerous assumption that doesn't work on current versions of Windows...
+            //NativeMethods.SetStdHandle(NativeMethods.STD_OUTPUT_HANDLE, new IntPtr(7));
+
+            // Instead, get the defaultStdOut using PInvoke
+            SafeFileHandle defaultStdOut = NativeMethods.CreateFile("CONOUT$", EFileAccess.GenericRead | EFileAccess.GenericWrite, EFileShare.Write, IntPtr.Zero, ECreationDisposition.OpenExisting, 0, IntPtr.Zero);
+            NativeMethods.SetStdHandle(NativeMethods.STD_OUTPUT_HANDLE, defaultStdOut.DangerousGetHandle());    // also seems dangerous... there may be an alternate signature for SetStdHandle that takes SafeFileHandle.
+
+            TextWriter writer = new StreamWriter(Console.OpenStandardOutput()) { AutoFlush = true };
+            Console.SetOut(writer);
+        }
+
+        internal static class NativeMethods
+        {
+            // 0xFFFFFFF5 is not consistent with what I found...
+            //internal const uint STD_OUTPUT_HANDLE = 0xFFFFFFF5; 
+
+            // https://www.pinvoke.net/default.aspx/kernel32.getstdhandle
+            internal const int STD_OUTPUT_HANDLE = -11;
+
+            [DllImport("kernel32.dll")]
+            [return: MarshalAs(UnmanagedType.Bool)]
+            internal static extern bool AllocConsole();
+
+
+
+            // method signature changed per https://www.pinvoke.net/default.aspx/kernel32.getstdhandle
+            [DllImport("kernel32.dll", SetLastError = true)]
+            internal static extern IntPtr GetStdHandle(int nStdHandle);
+
+            // method signature changed per https://www.pinvoke.net/default.aspx/kernel32.setstdhandle
+            [DllImport("kernel32.dll")]
+            internal static extern bool SetStdHandle(int nStdHandle, IntPtr hHandle);
+
+            [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+            internal static extern SafeFileHandle CreateFile(
+                string lpFileName,
+                EFileAccess dwDesiredAccess,
+                EFileShare dwShareMode,
+                IntPtr lpSecurityAttributes,
+                ECreationDisposition dwCreationDisposition,
+                EFileAttributes dwFlagsAndAttributes,
+                IntPtr hTemplateFile);
+        }
+
         public static void ShowConsoleWindow()
         {
             var handle = GetConsoleWindow();
@@ -263,41 +294,6 @@ namespace MoreClothingGUI
         {
             var handle = GetConsoleWindow();
             ShowWindow(handle, SW_HIDE);
-        }
-
-
-        [STAThread]
-        static void Main(string[] args)
-        {
-            
-            AttachConsole(ATTACH_PARENT_PROCESS);
-            Program.HideConsoleWindow();
-            int argCount = args == null ? 0 : args.Length;
-            Console.WriteLine("You specified {0} arguments:", argCount);
-            for (int i = 0; i < argCount; i++)
-            {
-                Console.WriteLine("  {0}", args[i]);
-            }
-
-            const string appName = "MoreClothingGUI";
-            bool createdNew;
-
-            mutex = new Mutex(true, appName, out createdNew);
-
-            if (!createdNew)
-            {
-                //app is already running! Exiting the application  
-                return;
-            }
-
-            
-            const int SW_HIDE = 0;
-            const int SW_SHOW = 5;
-            var handle = GetConsoleWindow();
-
-            Application.EnableVisualStyles();
-            Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new MultiFormContext(new MainForm()));
         }
     }
 }
